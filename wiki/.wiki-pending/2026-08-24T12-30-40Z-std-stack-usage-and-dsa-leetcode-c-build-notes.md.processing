@@ -1,0 +1,103 @@
+---
+title: "std::stack usage and DSA_Leetcode C++ build notes"
+evidence: "conversation"
+evidence_type: "conversation"
+capture_kind: "chat-only"
+suggested_action: "create"
+suggested_pages: []
+attachments: []
+captured_at: "2026-08-24T12-30-40Z"
+captured_by: "in-session-agent"
+capture_id: "cap-041594d56f9945f5a5911670b52dced1"
+promotion_policy: "none"
+promotion_decision: null
+promotion_id: null
+propagated_from: null
+---
+
+## std::stack in C++ — LIFO container adapter
+
+`std::stack` is a container adapter (header `<stack>`) providing
+Last-In-First-Out (LIFO) access. It does not implement its own storage;
+by default it wraps `std::deque`, but can be templated over another
+underlying container, e.g. `std::stack<int, std::vector<int>>`.
+
+### Declaration
+```cpp
+#include <stack>
+std::stack<int> s;
+std::stack<char> s2;
+std::stack<int, std::vector<int>> s3;  // custom underlying container
+```
+
+### Core operations
+| Function        | Meaning                              |
+|-----------------|----------------------------------------|
+| push(val)       | Add element to top                     |
+| pop()           | Remove top element — returns nothing   |
+| top()           | Access top element (reference)         |
+| empty()         | true if no elements                    |
+| size()          | number of elements                     |
+| emplace(args)   | construct element in-place on top      |
+
+### Gotcha (important, non-obvious)
+`pop()` does NOT return the removed value — it only removes it. To get
+the value and remove it, call `top()` first, then `pop()` separately:
+```cpp
+char c = s.top();
+s.pop();
+```
+Calling `top()` or `pop()` on an empty stack is undefined behavior —
+always guard with `empty()` first.
+
+### Worked example: Valid Parentheses (LeetCode)
+```cpp
+#include <stack>
+#include <string>
+
+bool isValid(std::string s) {
+    std::stack<char> st;
+    for (char c : s) {
+        if (c == '(' || c == '[' || c == '{') {
+            st.push(c);
+        } else {
+            if (st.empty()) return false;
+            char top = st.top();
+            st.pop();
+            if ((c == ')' && top != '(') ||
+                (c == ']' && top != '[') ||
+                (c == '}' && top != '{')) {
+                return false;
+            }
+        }
+    }
+    return st.empty();
+}
+```
+This pattern (push opening brackets, pop-and-compare on closing brackets,
+require empty stack at the end) is the canonical approach for bracket
+matching / balanced parentheses problems.
+
+## Project setup notes (DSA_Leetcode repo)
+
+- `std::string` requires `#include <string>`.
+- gtest is preinstalled system-wide on this machine (Ubuntu, libgtest-dev
+  1.14.0): headers at `/usr/include/gtest`, compiled libs at
+  `/usr/lib/x86_64-linux-gnu/libgtest.a` and `libgtest_main.a`. No
+  additional install needed.
+- Compile+link a gtest binary with:
+  ```
+  g++ -std=c++17 <Test>.cpp <Impl>.cpp -lgtest -lgtest_main -pthread -o <out>
+  ```
+  Both the test file AND the implementation .cpp must be passed to g++ —
+  omitting the implementation file causes `undefined reference` linker
+  errors, since the header only declares the method.
+- Fixed bug pattern seen in `PalindromeNumber.cpp`: method definitions
+  outside the class must repeat the return type (`bool Solution::isPalindrome(int x)`,
+  not `Solution::isPalindrome(int x)`), and local project headers must be
+  included with quotes (`#include "PalindromeNumber.hpp"`), not angle
+  brackets (`#include <PalindromeNumber.hpp>`) — angle brackets only search
+  system/library include paths.
+- This repo's wiki mode was set to `project` (`wiki use project`), so
+  captures land in `DSA_Leetcode/wiki/` rather than the cross-project
+  `~/wiki/`.
